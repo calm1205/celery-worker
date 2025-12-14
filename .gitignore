@@ -1,0 +1,12 @@
+.env
+.venv
+__pycache__/
+
+# Ruff
+.ruff_cache/
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
