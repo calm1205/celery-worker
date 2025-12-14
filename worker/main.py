@@ -15,6 +15,8 @@ app.conf.update(
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
+    task_acks_late=True,
+    broker_transport_options={"queue_order_strategy": "sorted"},
     timezone="Asia/Tokyo",
     enable_utc=True,
 )
