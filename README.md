@@ -13,3 +13,10 @@ cp .env.example .env
 ```bash
 docker compose watch
 ```
+
+## redis
+
+```bash
+docker compose exec redis redis-cli SCAN 0
+docker compose exec redis redis-cli GET celery-task-meta-04473adb-5469-4c5c-8cf4-516c5611b5f9 | jq .
+```
