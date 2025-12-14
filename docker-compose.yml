@@ -1,21 +1,22 @@
 services:
-  celery_worker:
+  api:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: celery_worker
-    command: uv run uvicorn src.main:app --host 0.0.0.0 --port ${API_PORT} --reload
-    environment:
-      - PYTHONDONTWRITEBYTECODE=1
+      dockerfile: Dockerfile.api
+    container_name: celery_api
+    command: uv run uvicorn api.main:app --host 0.0.0.0 --port ${API_PORT} --reload
     env_file:
       - .env
     ports:
       - "${API_PORT}:${API_PORT}"
+    depends_on:
+      redis:
+        condition: service_healthy
     develop:
       watch:
         - action: sync
-          path: ./src
-          target: /app/src
+          path: ./api
+          target: /app/api
         - action: sync
           path: ./pyproject.toml
           target: /app/pyproject.toml
@@ -23,4 +24,45 @@ services:
           path: ./uv.lock
           target: /app/uv.lock
         - action: rebuild
-          path: Dockerfile
+          path: Dockerfile.api
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: celery_worker
+    command: uv run celery -A worker.main worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./worker
+          target: /app/worker
+        - action: sync
+          path: ./pyproject.toml
+          target: /app/pyproject.toml
+        - action: sync
+          path: ./uv.lock
+          target: /app/uv.lock
+        - action: rebuild
+          path: Dockerfile.worker
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_broker
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis_data:
